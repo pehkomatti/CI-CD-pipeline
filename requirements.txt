@@ -1,0 +1,8 @@
+# Flask web framework
+flask
+
+# Testing framework
+pytest
+
+# Code coverage tool (used later in pipeline)
+pytest-cov
