@@ -1,6 +1,6 @@
 
 # Name of the workflow shown in GitHub Actions
-name: Basic CI Pipeline
+name: DevSecOps Pipeline
 
 
 # Force GitHub Actions to use Node.js 24 (future-proof)
@@ -34,6 +34,12 @@ jobs:
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref }}"
 
+    
+    # Scan for secrets in code
+    - name: Scan for secrets (Gitleaks)
+      uses: gitleaks/gitleaks-action@v2
+
+
 
     # Step 2: Install Python
     - name: Set up Python
@@ -45,6 +51,47 @@ jobs:
     - name: Install dependencies
       run: pip install -r requirements.txt
 
+      
+    # Lint code (static code analysis)
+    - name: Run linting (flake8)
+      run: |
+        # Fail on syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+        # Report warnings (does not fail pipeline)
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+
     # Step 4: Run tests
     - name: Run tests
       run: pytest
+
+
+
+  #  Job 2: Code scanning (SAST)
+  codeql:
+
+    name: CodeQL Analysis
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # Step 1: Checkout repository
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Initialize CodeQL
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: python
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    # Step 4: Run CodeQL analysis
+    - name: Analyze code
+      uses: github/codeql-action/analyze@v3
+
