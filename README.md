@@ -1,11 +1,67 @@
+# 🔐 DevSecOps Pipeline Project
 
-# DevSecOps Pipeline Project
+## 📌 Overview
 
-This project demonstrates how to build a DevSecOps pipeline using GitHub Actions. The main goal is to automate the software development lifecycle while integrating security checks at every stage of the process. A simple Python Flask application is used as the example application.
+This project demonstrates how to build a **DevSecOps pipeline** using **GitHub Actions**.  
+The primary goal is to automate the software development lifecycle while integrating **security practices at every stage**.
 
-The pipeline includes continuous integration (CI), where tests are automatically executed every time code is pushed or updated. In addition, multiple security practices are implemented following the “shift-left” approach, meaning security is applied early in development. These include linting for code quality, secret scanning to detect sensitive data, and static application security testing (SAST) using CodeQL to identify potential vulnerabilities in the source code.
+A simple **Python Flask application** is used as the example application to support pipeline implementation and testing.
 
-The project also demonstrates how to configure GitHub Actions workflows, manage permissions, and use the Security dashboard to review code scanning results. Special attention is given to building a clean, structured pipeline that reflects modern DevSecOps practices used in real-world environments.
+---
 
-AI Copilot was used as an assisting tool during the development of this project. It helped guide the implementation of the pipeline, and support troubleshooting. The tool was used as a learning aid rather than a replacement for understanding, with all configurations reviewed and implemented step by step.
-The primary focus of this project is not the application itself, but the design and implementation of a secure, automated, and maintainable DevSecOps pipeline.
+## ⚙️ Pipeline Features
+
+The pipeline includes **Continuous Integration (CI)** and multiple **DevSecOps security controls**, following a *shift-left* approach — introducing security early in development.
+
+### ✅ Core Capabilities:
+
+- **CI Automation**
+  - Automatically runs tests on every push and pull request
+
+- **Code Quality (Linting)**
+  - Uses `flake8` to enforce coding standards and detect issues early
+
+- **Secret Scanning**
+  - Detects sensitive data (API keys, tokens) using Gitleaks
+
+- **Static Application Security Testing (SAST)**
+  - Uses CodeQL to identify vulnerabilities in the source code
+
+- **Security Dashboard Integration**
+  - Displays findings in GitHub’s *Security → Code scanning alerts*
+
+- **Workflow Automation**
+  - Fully automated pipelines using GitHub Actions
+
+---
+
+## 🧠 DevSecOps Focus
+
+The main focus of this project is **not the application itself**, but the **design and implementation of a secure and automated development pipeline**.
+
+The project demonstrates:
+
+- Shift-left security practices  
+- Secure CI/CD pipeline design  
+- Integration of multiple security tools  
+- Real-world DevSecOps workflow structure  
+
+---
+
+## 🤖 AI-Assisted Development
+
+AI Copilot was used as a **supporting tool** during the development of this project.
+
+It assisted with:  
+- Guiding pipeline implementation  
+- Troubleshooting issues  
+
+> ⚠️ The AI tool was used as a **learning aid**, and all configurations were **reviewed, understood, and implemented step by step**.
+
+---
+
+## 🎯 Outcome
+
+This project represents a **practical implementation of modern DevSecOps practices**, combining automation, security, and continuous integration in a single pipeline.
+
+---
