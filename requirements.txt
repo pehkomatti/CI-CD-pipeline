@@ -6,3 +6,6 @@ pytest
 
 # Code coverage tool (used later in pipeline)
 pytest-cov
+
+# For Linting
+flake8
