@@ -1,0 +1,36 @@
+
+# Name of the workflow shown in GitHub Actions
+name: Basic CI Pipeline
+
+# Trigger the workflow on push or pull request
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+# Define jobs
+jobs:
+  test:
+
+    # Use a Linux virtual machine
+    runs-on: ubuntu-latest
+
+    steps:
+
+    # Step 1: Checkout your repository
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Step 2: Install Python
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    # Step 4: Run tests
+    - name: Run tests
+      run: pytest
