@@ -3,6 +3,17 @@
 name: DevSecOps Pipeline
 
 
+permissions:
+  # Allows the workflow to read repository contents (code, files)
+  contents: read
+  
+  # Allows security tools (like CodeQL) to upload vulnerability results
+  # to GitHub's Security tab (code scanning alerts) 
+
+  security-events: write
+
+
+
 # Force GitHub Actions to use Node.js 24 (future-proof)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
