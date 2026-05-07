@@ -21,6 +21,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+   
+    - name: Show commit information
+      run: |
+        echo "Triggered by: ${{ github.actor }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref }}"
+
+
     # Step 2: Install Python
     - name: Set up Python
       uses: actions/setup-python@v5
