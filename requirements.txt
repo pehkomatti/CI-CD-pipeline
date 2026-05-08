@@ -9,3 +9,6 @@ pytest-cov
 
 # For Linting
 flake8
+
+# Update pip
+pip>=26.1
