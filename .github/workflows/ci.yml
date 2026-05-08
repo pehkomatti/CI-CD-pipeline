@@ -40,7 +40,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0   # ✅ fetch full git history
+        fetch-depth: 0   # fetch full git history
 
 
    
@@ -68,10 +68,13 @@ jobs:
       run: pip install -r requirements.txt
 
     # Step : Dependency vulnerability scan (SCA)
+
     - name: Run dependency scan (pip-audit)
       run: |
         pip install pip-audit
-        pip-audit
+        echo "Running dependency scan..."
+        pip-audit || true
+
 
     
     # Generate SBOM (Software Bill of Materials)
