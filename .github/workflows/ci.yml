@@ -1,25 +1,15 @@
-
-# Name of the workflow shown in GitHub Actions
 name: DevSecOps Pipeline
 
-
+# Define minimal permissions (principle of least privilege)
 permissions:
-  # Allows the workflow to read repository contents (code, files)
   contents: read
-  
-  # Allows security tools (like CodeQL) to upload vulnerability results
-  # to GitHub's Security tab (code scanning alerts) 
-
   security-events: write
-
-
 
 # Force GitHub Actions to use Node.js 24 (future-proof)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-
-# Trigger the workflow on push or pull request
+# Trigger the workflow
 on:
   push:
     branches: ["main"]
@@ -27,107 +17,125 @@ on:
   workflow_dispatch:
 
 
-# Define jobs
 jobs:
-  test:
 
-    # Use a Linux virtual machine
+
+  # Job 1: CI + Security Checks
+  test:
+    name: CI and Security Checks
     runs-on: ubuntu-latest
 
     steps:
 
-    # Step 1 : Checkout your repository
+    # Checkout repository with full history
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0   # fetch full git history
+        fetch-depth: 0
 
-
-   
+    # Show execution context
     - name: Show commit information
       run: |
         echo "Triggered by: ${{ github.actor }}"
         echo "Repository: ${{ github.repository }}"
         echo "Branch: ${{ github.ref }}"
 
-    
-    # Step : Scan for secrets in code
+    # Secret scanning
     - name: Scan for secrets (Gitleaks)
       uses: gitleaks/gitleaks-action@v2
 
-
-
-    # Step : Install Python
+    # Setup Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
-    # Step : Install dependencies
+    # Cache dependencies (optional but professional)
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # Install dependencies
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    # Step : Dependency vulnerability scan (SCA)
-
+    # Dependency vulnerability scan (SCA)
     - name: Run dependency scan (pip-audit)
       run: |
         pip install pip-audit
         echo "Running dependency scan..."
         pip-audit || true
 
-
-    # Generate SBOM (Software Bill of Materials)
+    # Generate SBOM (automatically uploaded by action)
     - name: Generate SBOM
       uses: anchore/sbom-action@v0
       with:
         path: .
         format: spdx-json
-    
-    # Debug files
-    - name: Debug SBOM files
-      run: ls -la
-      
-    
-    # Step : Lint code (static code analysis)
+
+    # Linting (static code quality)
     - name: Run linting (flake8)
       run: |
-        # Fail on syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-        # Report warnings (does not fail pipeline)
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-
-    # Step : Run tests
+    # Run tests
     - name: Run tests
       run: pytest
 
 
 
-  #  Job 2: Code scanning (SAST)
+  # Job 2: SAST (CodeQL)
   codeql:
-
     name: CodeQL Analysis
-
     runs-on: ubuntu-latest
+    needs: test
 
     steps:
 
-    # Step 1: Checkout repository
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Step 2: Initialize CodeQL
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: python
 
-    # Step 3: Install dependencies
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-    # Step 4: Run CodeQL analysis
     - name: Analyze code
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
+
+
+ 
+  # Job 3: Build + Container Security
+  build:
+    name: Build and Scan Container
+    runs-on: ubuntu-latest
+    needs: [test, codeql]
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Build Docker image
+    - name: Build Docker image
+      run: docker build -t devsecops-app:latest .
+
+    # Scan Docker image for vulnerabilities
+    - name: Run Trivy scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: devsecops-app:latest
+        format: table
+        exit-code: 0
+        severity: CRITICAL,HIGH
 
