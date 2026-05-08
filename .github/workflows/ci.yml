@@ -76,21 +76,24 @@ jobs:
         pip-audit || true
 
 
-    
     # Generate SBOM (Software Bill of Materials)
     - name: Generate SBOM
       uses: anchore/sbom-action@v0
       with:
         path: .
         format: spdx-json
-
     
-    # Upload SBOM as artifact
+    # Debug files
+    - name: Debug SBOM files
+      run: ls -la
+    
+    # Upload SBOM
     - name: Upload SBOM artifact
       uses: actions/upload-artifact@v4
       with:
         name: sbom
-        path: sbom.spdx.json
+        path: "*.spdx.json"
+
 
     
     # Step : Lint code (static code analysis)
