@@ -36,7 +36,7 @@ jobs:
 
     steps:
 
-    # Step 1: Checkout your repository
+    # Step 1 : Checkout your repository
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -48,24 +48,46 @@ jobs:
         echo "Branch: ${{ github.ref }}"
 
     
-    # Scan for secrets in code
+    # Step : Scan for secrets in code
     - name: Scan for secrets (Gitleaks)
       uses: gitleaks/gitleaks-action@v2
 
 
 
-    # Step 2: Install Python
+    # Step : Install Python
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
 
-    # Step 3: Install dependencies
+    # Step : Install dependencies
     - name: Install dependencies
       run: pip install -r requirements.txt
 
-      
-    # Lint code (static code analysis)
+    # Step : Dependency vulnerability scan (SCA)
+    - name: Run dependency scan (pip-audit)
+      run: |
+        pip install pip-audit
+        pip-audit
+
+    
+    # Generate SBOM (Software Bill of Materials)
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        path: .
+        format: spdx-json
+
+    
+    # Upload SBOM as artifact
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.spdx.json
+
+    
+    # Step : Lint code (static code analysis)
     - name: Run linting (flake8)
       run: |
         # Fail on syntax errors or undefined names
@@ -75,7 +97,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
 
-    # Step 4: Run tests
+    # Step : Run tests
     - name: Run tests
       run: pytest
 
