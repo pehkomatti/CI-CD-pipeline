@@ -39,6 +39,9 @@ jobs:
     # Step 1 : Checkout your repository
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0   # ✅ fetch full git history
+
 
    
     - name: Show commit information
