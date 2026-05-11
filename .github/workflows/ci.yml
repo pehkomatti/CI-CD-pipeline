@@ -4,6 +4,7 @@ name: DevSecOps Pipeline
 permissions:
   contents: read
   security-events: write
+  issues: write
 
 # Force GitHub Actions to use Node.js 24 (future-proof)
 env:
