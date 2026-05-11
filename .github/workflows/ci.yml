@@ -139,3 +139,39 @@ jobs:
         exit-code: 0
         severity: CRITICAL,HIGH
 
+    
+
+  # Job 4: DAST (OWASP ZAP)
+
+  dast:
+    name: Dynamic Application Security Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Start containerized app
+    - name: Start application
+      run: |
+        docker run -d -p 8080:8080 --name app devsecops-app:latest
+        sleep 10
+
+    # Run OWASP ZAP scan
+    - name: Run ZAP baseline scan
+      uses: zaproxy/action-baseline@v0.10.0
+      with:
+        target: 'http://localhost:8080'
+
+    # Upload security report
+    - name: Upload ZAP report
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-report
+        path: report_html.html
+
+
+
+
