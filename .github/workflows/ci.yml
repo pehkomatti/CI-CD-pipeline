@@ -143,6 +143,7 @@ jobs:
 
   # Job 4: DAST (OWASP ZAP)
 
+
   dast:
     name: Dynamic Application Security Test
     runs-on: ubuntu-latest
@@ -153,7 +154,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Start containerized app
+    # Build image again (required in this job)
+    - name: Build Docker image
+      run: docker build -t devsecops-app:latest .
+
+    #  Run the application
     - name: Start application
       run: |
         docker run -d -p 8080:8080 --name app devsecops-app:latest
@@ -165,12 +170,13 @@ jobs:
       with:
         target: 'http://localhost:8080'
 
-    # Upload security report
+    # Upload report
     - name: Upload ZAP report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report
         path: report_html.html
+
 
 
 
