@@ -1,96 +1,76 @@
 name: DevSecOps Pipeline
 
-# Define minimal permissions (principle of least privilege)
+# Minimal permissions following least-privilege principle
 permissions:
   contents: read
   security-events: write
   issues: write
 
-# Force GitHub Actions to use Node.js 24 (future-proof)
+# Ensure JavaScript-based actions use Node.js 24
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-# Trigger the workflow
+# Cancel older runs when new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Workflow triggers
 on:
   push:
     branches: ["main"]
   pull_request:
   workflow_dispatch:
 
-
 jobs:
 
-
-  # Job 1: CI + Security Checks
+  # CI, code quality, and dependency security checks
   test:
     name: CI and Security Checks
     runs-on: ubuntu-latest
 
     steps:
 
-    # Checkout repository with full history
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      # Checkout repository source code
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # Show execution context
-    - name: Show commit information
-      run: |
-        echo "Triggered by: ${{ github.actor }}"
-        echo "Repository: ${{ github.repository }}"
-        echo "Branch: ${{ github.ref }}"
+      # Scan repository for exposed secrets
+      - name: Secret Scan
+        uses: gitleaks/gitleaks-action@v2
 
-    # Secret scanning
-    - name: Scan for secrets (Gitleaks)
-      uses: gitleaks/gitleaks-action@v2
+      # Install Python runtime
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
 
-    # Setup Python
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      # Install project dependencies
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
 
-    # Cache dependencies (optional but professional)
-    - name: Cache pip
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      # Check dependencies for known vulnerabilities
+      - name: Dependency Scan
+        run: pip-audit --strict
 
-    # Install dependencies
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      # Generate Software Bill of Materials
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
 
-    # Dependency vulnerability scan (SCA)
-    - name: Run dependency scan (pip-audit)
-      run: |
-        pip install pip-audit
-        echo "Running dependency scan..."
-        pip-audit || true
+      # Run static security analysis for Python
+      - name: Bandit Scan
+        run: bandit -r .
 
-    # Generate SBOM (automatically uploaded by action)
-    - name: Generate SBOM
-      uses: anchore/sbom-action@v0
-      with:
-        path: .
-        format: spdx-json
+      # Run code quality checks
+      - name: Lint Code
+        run: flake8 .
 
-    # Linting (static code quality)
-    - name: Run linting (flake8)
-      run: |
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      # Execute automated tests
+      - name: Run Tests
+        run: pytest
 
-    # Run tests
-    - name: Run tests
-      run: pytest
-
-
-
-  # Job 2: SAST (CodeQL)
+  # Static Application Security Testing (SAST)
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
@@ -98,87 +78,78 @@ jobs:
 
     steps:
 
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Checkout repository
+      - uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v4
-      with:
-        languages: python
+      # Initialize CodeQL analysis
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: python
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      # Analyze source code
+      - uses: github/codeql-action/analyze@v4
 
-    - name: Analyze code
-      uses: github/codeql-action/analyze@v4
-
-
- 
-  # Job 3: Build + Container Security
+  # Build and container security validation
   build:
     name: Build and Scan Container
     runs-on: ubuntu-latest
-    needs: [test, codeql]
+    needs: test
 
     steps:
 
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+      # Checkout repository
+      - uses: actions/checkout@v4
 
-    # Build Docker image
-    - name: Build Docker image
-      run: docker build -t devsecops-app:latest .
+      # Validate Dockerfile best practices
+      - uses: hadolint/hadolint-action@v3
 
-    # Scan Docker image for vulnerabilities
-    - name: Run Trivy scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: devsecops-app:latest
-        format: table
-        exit-code: 0
-        severity: CRITICAL,HIGH
+      # Configure Docker Buildx
+      - uses: docker/setup-buildx-action@v3
 
-    
+      # Build application container image
+      - uses: docker/build-push-action@v6
+        with:
+          push: false
+          tags: devsecops-app:latest
 
-  # Job 4: DAST (OWASP ZAP)
+      # Scan container image for vulnerabilities
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: devsecops-app:latest
 
-
+  # Dynamic Application Security Testing (DAST)
   dast:
     name: Dynamic Application Security Test
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, codeql]
 
     steps:
 
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # Checkout repository
+      - uses: actions/checkout@v4
 
-    # Build image again (required in this job)
-    - name: Build Docker image
-      run: docker build -t devsecops-app:latest .
+      # Build container image
+      - name: Build Docker Image
+        run: docker build -t devsecops-app:latest .
 
-    #  Run the application
-    - name: Start application
-      run: |
-        docker run -d -p 8080:8080 --name app devsecops-app:latest
-        sleep 10
+      # Start application container
+      - name: Start Application
+        run: docker run -d -p 8080:8080 devsecops-app:latest
 
-    # Run OWASP ZAP scan
-    - name: Run ZAP baseline scan
-      uses: zaproxy/action-baseline@v0.10.0
-      with:
-        target: 'http://localhost:8080'
+      # Wait until application becomes available
+      - name: Health Check
+        run: |
+          until curl -fsS http://localhost:8080
+          do
+            sleep 2
+          done
 
-    # Upload report
-    - name: Upload ZAP report
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-report
-        path: report_html.html
+      # Run OWASP ZAP security scan
+      - uses: zaproxy/action-baseline@v0.10.0
 
-
+      # Store scan report for review
+      - uses: actions/upload-artifact@v4
+        if: always()
 
 
 
