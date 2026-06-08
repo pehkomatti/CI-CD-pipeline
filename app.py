@@ -22,4 +22,4 @@ if __name__ == "__main__":
     # Start the web server
     # host="0.0.0.0" allows access from outside (important for Docker later)
     # port=8080 is the port where the app runs
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="127.0.0.1", port=8080)
