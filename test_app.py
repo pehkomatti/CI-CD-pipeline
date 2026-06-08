@@ -11,4 +11,4 @@ def test_home():
     response = client.get("/")
 
     # Check that the response status is 200 (OK)
-    assert response.status_code == 200  # nosec B101
+    assert response.status_code == 200
