@@ -62,7 +62,7 @@ jobs:
 
       # Run static security analysis for Python
       - name: Bandit Scan
-        run: bandit -r . -x tests,test_*.py
+        run: bandit -r . -s B101
 
       # Run code quality checks
       - name: Lint Code
