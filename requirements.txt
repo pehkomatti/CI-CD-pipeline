@@ -1,17 +1,8 @@
-# Flask web framework
-flask
-
-# Testing framework
+# Testing framework for running unit tests
 pytest
-
-# Code coverage tool (used later in pipeline)
+# Measures test coverage of code
 pytest-cov
-
-# For Linting
+# Linting tool for Python code style and errors
 flake8
-
-# Update pip
-pip>=26.1
-
-
-#TESTING PUSH/PULL/COMMIT
+# Scans installed dependencies for known security vulnerabilities
+pip-audit
